@@ -13,10 +13,17 @@ declare module 'fetch-retry' {
     response: Awaited<ReturnType<F>> | null,
   ) => boolean | Promise<boolean>;
 
+  export type RequestRetryHeadersFunction<F extends FetchLibrary> = (
+    attempt: number,
+    error: Error | null,
+    response: Awaited<ReturnType<F>> | null,
+  ) => { [key: string]: string }
+
   export type RequestInitRetryParams<F extends FetchLibrary> = {
     retries?: number;
     retryDelay?: number | RequestDelayFunction<F>;
     retryOn?: number[] | RequestRetryOnFunction<F>;
+    retryHeaders?: { [key: string]: string } | RequestRetryHeadersFunction<F>;
   };
 
   export type RequestInitWithRetry<F extends FetchLibrary> = Parameters<F>[1] &

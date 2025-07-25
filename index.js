@@ -22,10 +22,15 @@ module.exports = function (fetch, defaults) {
     throw new ArgumentError('retryOn property expects an array or function');
   }
 
+  if (defaults.retryHeaders !== undefined && typeof defaults.retryHeaders !== 'object' && typeof defaults.retryHeaders !== 'function) {
+    throw new ArgumentError('retryHeaders property expects an object or function');
+  }
+
   var baseDefaults = {
     retries: 3,
     retryDelay: 1000,
     retryOn: [],
+    retryHeaders: {},
   };
 
   defaults = Object.assign(baseDefaults, defaults);
@@ -34,6 +39,7 @@ module.exports = function (fetch, defaults) {
     var retries = defaults.retries;
     var retryDelay = defaults.retryDelay;
     var retryOn = defaults.retryOn;
+    var retryHeaders = defaults.retryHeaders;
 
     if (init && init.retries !== undefined) {
       if (isPositiveInteger(init.retries)) {
@@ -56,6 +62,14 @@ module.exports = function (fetch, defaults) {
         retryOn = init.retryOn;
       } else {
         throw new ArgumentError('retryOn property expects an array or function');
+      }
+    }
+
+    if (init && init.retryHeaders) {
+      if (typeof init.retryHeaders === 'object' || (typeof init.retryHeaders === 'function')) {
+        retryHeaders = init.retryHeaders;
+      } else {
+        throw new ArgumentError('retryHeaders property expects an object or function');
       }
     }
 
@@ -123,6 +137,11 @@ module.exports = function (fetch, defaults) {
       function retry(attempt, error, response) {
         var delay = (typeof retryDelay === 'function') ?
           retryDelay(attempt, error, response) : retryDelay;
+        var newHeaders = (typeof retryHeaders === 'function') ?
+          retryHeaders(attempt, error, response) : retryHeaders;
+        if (newHeaders && typeof newHeaders === 'object') {
+          init = {...init, headers: { ...init.headers, ...newHeaders } };
+        }
         setTimeout(function () {
           wrappedFetch(++attempt);
         }, delay);
